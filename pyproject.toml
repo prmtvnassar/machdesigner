@@ -1,0 +1,120 @@
+[build-system]
+requires = ["hatchling>=1.18"]
+build-backend = "hatchling.build"
+
+[project]
+name = "machdesigner"
+version = "1.0.0"
+description = "Design, simulate, and analyse silicon photonic circuits, with a Mach-Zehnder interferometer as the worked example."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Youssef Nassar" }]
+keywords = [
+    "photonics",
+    "silicon-photonics",
+    "mach-zehnder",
+    "interferometer",
+    "simulation",
+    "soi",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    # No "License ::" classifier: PEP 639 deprecates it in favour of the
+    # SPDX `license` expression above, and some build backends reject both.
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+]
+
+# The core library needs only NumPy and matplotlib. Qt and simphony are extras,
+# so the package installs and its physics runs in a minimal environment.
+dependencies = [
+    "numpy>=1.22",
+    "matplotlib>=3.6",   # Figure(layout="constrained")
+]
+
+[project.optional-dependencies]
+gui = ["PyQt5>=5.15"]
+# simphony 0.7 replaced the simulation API this adapter targets.
+simphony = ["simphony>=0.6,<0.7"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.4",
+    "mypy>=1.8",
+]
+all = [
+    "machdesigner[gui]",
+    "machdesigner[simphony]",
+]
+
+[project.scripts]
+machdesigner = "machdesigner.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/prmtv-mind/machdesigner"
+Repository = "https://github.com/prmtv-mind/machdesigner"
+Issues = "https://github.com/prmtv-mind/machdesigner/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/machdesigner"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/", "tests/", "docs/", "examples/", "README.md", "LICENSE", "CHANGELOG.md"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+filterwarnings = [
+    "error::machdesigner.simulate.UnderSampledSweepWarning",
+]
+
+[tool.ruff]
+line-length = 96
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "RUF"]
+ignore = [
+    "N802",   # Qt overrides use camelCase (closeEvent)
+    "N806",   # physics variables read better as written (E_out, X)
+    "RUF012", # mutable class attrs in Qt widgets are conventional
+    "RUF022", # __all__ is grouped by topic with comments, not alphabetised
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src/machdesigner"]
+ignore_missing_imports = true
+warn_unused_ignores = false
+warn_redundant_casts = true
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+module = ["simphony.*", "PyQt5.*", "matplotlib.*"]
+ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["src/machdesigner"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
